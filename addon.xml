@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.image.chan" name="Chan Browser" version="0.0.1"
+       provider-name="Dave Anderson">
+  <requires>
+    <import addon="script.module.simplejson" version="2.0.10"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="addon.py">
+    <provides>image</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+    <summary lang="en">Browse threads on 4chan</summary>
+    <description>
+      Browse threads on 4chan
+    </description> 
+    <license>GPL 2.0</license>
+  </extension>
+</addon>
