@@ -109,7 +109,7 @@ def populateBookmarkDirectory():
 			commands.append(( 'Remove bookmark', 'XBMC.RunScript(special://home/addons/plugin.image.chan/resources/lib/bmark_thread.py, remove, %s, %s)' % (json_filename, bmark['number']), ))
 			listitem = xbmcgui.ListItem(bmark['name'],iconImage=bmark['thumb'])
 			listitem.addContextMenuItems(commands)
-			plugin.addDirectoryItem(url='%s/%s/thread/%s' % (plugin.root, bmark['board'], bmark['number']), listitem=listitem, isFolder=True)
+			plugin.addDirectoryItem(url='%s/%s/chkthread/%s' % (plugin.root, bmark['board'], bmark['number']), listitem=listitem, isFolder=True)
 		plugin.endOfDirectory()
 
 def die(alert=False):
@@ -122,7 +122,13 @@ if plugin.path:
 	if(split[0] == 'bmarks') :
 		populateBookmarkDirectory()	
 	elif(split[1] == 'thread') :
-		populatePostDirectory(split[0],split[2])	
+		populatePostDirectory(split[0],split[2])
+	elif(split[1] == 'chkthread') :
+		try:
+			populatePostDirectory(split[0],split[2])
+		except:
+			xbmcgui.Dialog().ok(__addonname__, 'Thread has expired and will be removed from bookmarks')
+			xbmc.executebuiltin('XBMC.RunScript(special://home/addons/plugin.image.chan/resources/lib/bmark_thread.py, remove, %s, %s)' % (json_filename, split[2]))	
 	else :
 		if(split[1] == 'jump') :
 			result = xbmcgui.Dialog().numeric(0, 'Choose a Page')
