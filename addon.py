@@ -1,32 +1,15 @@
 #!/usr/bin/env python
-import sys, urllib, urllib2, cookielib, xbmcgui, xbmcaddon, simplejson as json
+import sys, urllib, urllib2, xbmcgui, xbmcaddon, simplejson as json
+from xbmcapi import XBMCSourcePlugin
 
 __addon__       = xbmcaddon.Addon()
 __addonname__   = __addon__.getAddonInfo('name')
 __profile__ = xbmc.translatePath( __addon__.getAddonInfo('profile') ).decode("utf-8")
 __cwd__ = xbmc.translatePath( __addon__.getAddonInfo('path') ).decode("utf-8")
 __icon__ = __addon__.getAddonInfo('icon')
+json_filename = __profile__+'data.json'
 
-from xbmcapi import XBMCSourcePlugin
-
-cookie_filename = __profile__+'chan.cookie'
-cookieJar = cookielib.LWPCookieJar(cookie_filename)
-
-if os.access(cookie_filename, os.F_OK):
-	cookieJar.load(ignore_discard=True)
-
-opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookieJar))
-opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.11) Gecko/20101012 Firefox/3.6.11'),]
 plugin = XBMCSourcePlugin()
-
-def home():
-	user = serverRequest('pwg.session.getStatus')
-	if (user['status'] == 'webmaster') or (user['status'] == 'admin') or (user['status'] == 'administrator') :
-		opts['Synchronize Server'] = 'sync'
-	for key in opts.iteritems():
-		listitem = xbmcgui.ListItem(key[0])
-		plugin.addDirectoryItem(url='%s/%s' % (plugin.root, key[1]), listitem=listitem, isFolder=True)
-	plugin.endOfDirectory()	
 
 def serverRequest(board = '', method = '', thread = False, extraData = []):
 	url = 'http://a.4cdn.org/'
@@ -42,7 +25,6 @@ def serverRequest(board = '', method = '', thread = False, extraData = []):
 		response = json.loads(conn.read())
 	except:
 		conn.close()
-		# xbmcgui.Dialog().ok(__addonname__, 'There was an error retrieving data from the server')
 		die('There was an error retrieving data from the server')
 	else:
 		conn.close()
@@ -55,13 +37,14 @@ def populateHomeDirectory():
 			pass
 		else :
 			commands = []
-
-			# commands.append(( 'Jump to page', 'RunScript('+__cwd__+'/page_jump.py,'+plugin.root+','+obj['board']+')', ))
 			commands.append(( 'Jump to page', 'XBMC.Container.Update(%s/%s/jump)' % (plugin.root, obj['board']), ))
-
 			listitem = xbmcgui.ListItem('/'+obj['board']+'/ - '+obj['title'], iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
 			listitem.addContextMenuItems(commands)
 			plugin.addDirectoryItem(url='%s/%s/1' % (plugin.root, obj['board']), listitem=listitem, isFolder=True)
+
+	listitem = xbmcgui.ListItem('Bookmarks', iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
+	plugin.addDirectoryItem(url='%s/bmarks' % (plugin.root), listitem=listitem, isFolder=True)
+
 	plugin.endOfDirectory()
 
 def populateBoardDirectory(board,page):
@@ -69,10 +52,10 @@ def populateBoardDirectory(board,page):
 	try:
 		currentPage = pages[int(page) - 1]['threads']
 	except :
-		# xbmcgui.Dialog().ok(__addonname__, 'Invalid page selection')
-		die('Invalid page selection')
+		die('Invalid page number selected')
 	else:	
 		for obj in currentPage:
+			commands = []
 			try:
 				label = obj['sub']
 			except:
@@ -85,7 +68,9 @@ def populateBoardDirectory(board,page):
 				listitem = xbmcgui.ListItem(label)
 			else:
 				listitem = xbmcgui.ListItem(label,iconImage=thumb,thumbnailImage=thumb)
-			plugin.addDirectoryItem(url='%s/%s/thread/%s' % (plugin.root, board,obj['no']), listitem=listitem, isFolder=True)
+			commands.append(( 'Bookmark thread', 'XBMC.RunScript(special://home/addons/plugin.image.chan/resources/lib/bmark_thread.py, add, %s, %s, %s, %s)' % (json_filename, board, obj['no'], thumb), ))
+			listitem.addContextMenuItems(commands)
+			plugin.addDirectoryItem(url='%s/%s/thread/%s' % (plugin.root, board, obj['no']), listitem=listitem, isFolder=True)
 		if(len(pages) != int(page)) :
 			nextPageNum = int(page) + 1
 			listitem = xbmcgui.ListItem('> Next Page (%s)' % (nextPageNum), iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
@@ -106,6 +91,27 @@ def populatePostDirectory(board,thread):
 			plugin.addDirectoryItem(url=image, listitem=listitem)
 	plugin.endOfDirectory()
 
+def populateBookmarkDirectory():
+	try:
+		json_data = open(json_filename)
+		data = json.load(json_data)	
+		json_data.close()
+		bmarks = data['bmthreads']
+	except:
+		die('No bookmarks found')
+	else:
+		if len(bmarks) == 0:
+			xbmcgui.Dialog().ok(__addonname__, 'No bookmarks found')
+			xbmc.executebuiltin('XBMC.Container.Update('+plugin.root+')')
+			die()
+		for bmark in bmarks:
+			commands = []
+			commands.append(( 'Remove bookmark', 'XBMC.RunScript(special://home/addons/plugin.image.chan/resources/lib/bmark_thread.py, remove, %s, %s)' % (json_filename, bmark['number']), ))
+			listitem = xbmcgui.ListItem(bmark['name'],iconImage=bmark['thumb'])
+			listitem.addContextMenuItems(commands)
+			plugin.addDirectoryItem(url='%s/%s/thread/%s' % (plugin.root, bmark['board'], bmark['number']), listitem=listitem, isFolder=True)
+		plugin.endOfDirectory()
+
 def die(alert=False):
 	if alert:
 		xbmcgui.Dialog().ok(__addonname__, alert)
@@ -113,8 +119,10 @@ def die(alert=False):
 
 if plugin.path:
 	split = plugin.path.split('/')
-	if(split[1] == 'thread') :
-		populatePostDirectory(split[0],split[2])
+	if(split[0] == 'bmarks') :
+		populateBookmarkDirectory()	
+	elif(split[1] == 'thread') :
+		populatePostDirectory(split[0],split[2])	
 	else :
 		if(split[1] == 'jump') :
 			result = xbmcgui.Dialog().numeric(0, 'Choose a Page')
@@ -123,4 +131,3 @@ if plugin.path:
 			populateBoardDirectory(split[0],split[1])
 else:
 	populateHomeDirectory()
-
