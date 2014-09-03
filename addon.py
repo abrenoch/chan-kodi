@@ -32,6 +32,8 @@ def serverRequest(board = '', method = '', thread = False, extraData = []):
 
 def populateHomeDirectory():
 	array = serverRequest('','boards')['boards']
+	listitem = xbmcgui.ListItem('> Bookmarks', iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
+	plugin.addDirectoryItem(url='%s/bmarks' % (plugin.root), listitem=listitem, isFolder=True)	
 	for obj in array:
 		if(obj['ws_board'] == 0 and plugin.getSetting('incl_nsfw') == 'false') :
 			pass
@@ -41,10 +43,6 @@ def populateHomeDirectory():
 			listitem = xbmcgui.ListItem('/'+obj['board']+'/ - '+obj['title'], iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
 			listitem.addContextMenuItems(commands)
 			plugin.addDirectoryItem(url='%s/%s/1' % (plugin.root, obj['board']), listitem=listitem, isFolder=True)
-
-	listitem = xbmcgui.ListItem('Bookmarks', iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
-	plugin.addDirectoryItem(url='%s/bmarks' % (plugin.root), listitem=listitem, isFolder=True)
-
 	plugin.endOfDirectory()
 
 def populateBoardDirectory(board,page):
@@ -65,6 +63,7 @@ def populateBoardDirectory(board,page):
 			try:
 				thumb = 'https://1.t.4cdn.org/%s/%ss.jpg' % (board,obj['tim'])
 			except :
+				thumb = None
 				listitem = xbmcgui.ListItem(label)
 			else:
 				listitem = xbmcgui.ListItem(label,iconImage=thumb,thumbnailImage=thumb)
