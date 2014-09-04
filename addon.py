@@ -67,7 +67,7 @@ def populateBoardDirectory(board,page):
 				listitem = xbmcgui.ListItem(label)
 			else:
 				listitem = xbmcgui.ListItem(label,iconImage=thumb,thumbnailImage=thumb)
-			commands.append(( 'Bookmark thread', 'XBMC.RunScript(special://home/addons/plugin.image.chan/resources/lib/bmark_thread.py, add, %s, %s, %s, %s)' % (json_filename, board, obj['no'], thumb), ))
+			commands.append(( 'Bookmark thread', 'XBMC.RunScript(%s, add, %s, %s, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, board, obj['no'], thumb), ))
 			listitem.addContextMenuItems(commands)
 			plugin.addDirectoryItem(url='%s/%s/thread/%s' % (plugin.root, board, obj['no']), listitem=listitem, isFolder=True)
 		if(len(pages) != int(page)) :
