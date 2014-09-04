@@ -12,7 +12,7 @@ if sys.argv[1] == 'remove':
 	for thread in data['bmthreads']:
 		if thread['number'] == sys.argv[3]:
 			data['bmthreads'].remove(thread)
-			xbmc.executebuiltin('Notification(Chan Browser, Thread bookmark removed, 5000, '+sys.argv[6]+')')
+			xbmc.executebuiltin('Notification(Chan Browser, Thread bookmark removed, 5000, '+sys.argv[4]+')')
 			xbmc.executebuiltin('XBMC.Container.Refresh()')
 	with open(sys.argv[2], 'w') as outfile:
 		json.dump(data, outfile)
