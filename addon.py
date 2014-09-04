@@ -67,7 +67,7 @@ def populateBoardDirectory(board,page):
 				listitem = xbmcgui.ListItem(label)
 			else:
 				listitem = xbmcgui.ListItem(label,iconImage=thumb,thumbnailImage=thumb)
-			commands.append(( 'Bookmark thread', 'XBMC.RunScript(%s, add, %s, %s, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, board, obj['no'], thumb), ))
+			commands.append(( 'Bookmark thread', 'XBMC.RunScript(%s, add, %s, %s, %s, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, board, obj['no'], thumb, __icon__), ))
 			listitem.addContextMenuItems(commands)
 			plugin.addDirectoryItem(url='%s/%s/thread/%s' % (plugin.root, board, obj['no']), listitem=listitem, isFolder=True)
 		if(len(pages) != int(page)) :
@@ -105,7 +105,7 @@ def populateBookmarkDirectory():
 			die()
 		for bmark in bmarks:
 			commands = []
-			commands.append(( 'Remove bookmark', 'XBMC.RunScript(%s, remove, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, bmark['number']), ))
+			commands.append(( 'Remove bookmark', 'XBMC.RunScript(%s, remove, %s, %s, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, bmark['number'], None, __icon__), ))
 			listitem = xbmcgui.ListItem(bmark['name'],iconImage=bmark['thumb'])
 			listitem.addContextMenuItems(commands)
 			plugin.addDirectoryItem(url='%s/%s/chkthread/%s' % (plugin.root, bmark['board'], bmark['number']), listitem=listitem, isFolder=True)
@@ -127,7 +127,7 @@ if plugin.path:
 			populatePostDirectory(split[0],split[2])
 		except:
 			xbmcgui.Dialog().ok(__addonname__, 'Thread has expired and will be removed from bookmarks')
-			xbmc.executebuiltin('XBMC.RunScript(%s, remove, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, split[2]))	
+			xbmc.executebuiltin('XBMC.RunScript(%s, remove, %s, %s, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, split[2], None, __icon__))	
 	else :
 		if(split[1] == 'jump') :
 			result = xbmcgui.Dialog().numeric(0, 'Choose a Page')
