@@ -12,7 +12,7 @@ if sys.argv[1] == 'remove':
 	for thread in data['bmthreads']:
 		if thread['number'] == sys.argv[3]:
 			data['bmthreads'].remove(thread)
-			xbmc.executebuiltin('Notification(Chan Browser, Thread bookmark removed, 5000, DefaultAddon.png)')
+			xbmc.executebuiltin('Notification(Chan Browser, Thread bookmark removed, 5000, '+sys.argv[6]+')')
 			xbmc.executebuiltin('XBMC.Container.Refresh()')
 	with open(sys.argv[2], 'w') as outfile:
 		json.dump(data, outfile)
@@ -35,8 +35,8 @@ else:
 		if cont:
 			bmthreads.append(new_thread)
 			data['bmthreads'] = bmthreads
-			xbmc.executebuiltin('Notification(Chan Browser, Thread bookmarked successfully, 5000, DefaultAddon.png)')
+			xbmc.executebuiltin('Notification(Chan Browser, Thread bookmarked successfully, 5000, '+sys.argv[6]+')')
 		else:
-			xbmc.executebuiltin('Notification(Chan Browser, Thread already bookmarked, 5000, DefaultAddonNone.png)')
+			xbmc.executebuiltin('Notification(Chan Browser, Thread already bookmarked, 5000, '+sys.argv[6]+')')
 		json.dump(data, outfile)
 		outfile.close()
