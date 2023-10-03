@@ -1,48 +1,51 @@
 #!/usr/bin/env python
-import sys, urllib, urllib2, xbmcgui, xbmcaddon, simplejson as json
+import urllib, urllib.request, simplejson as json, traceback, os
+import xbmcgui, xbmcaddon, xbmcvfs, xbmc
 from xbmcapi import XBMCSourcePlugin
 
 __addon__       = xbmcaddon.Addon()
 __addonname__   = __addon__.getAddonInfo('name')
-__profile__ = xbmc.translatePath( __addon__.getAddonInfo('profile') ).decode("utf-8")
-__cwd__ = xbmc.translatePath( __addon__.getAddonInfo('path') ).decode("utf-8")
+__profile__ = xbmcvfs.translatePath( __addon__.getAddonInfo('profile') )
+__cwd__ = xbmcvfs.translatePath( __addon__.getAddonInfo('path') )
 __icon__ = __addon__.getAddonInfo('icon')
 json_filename = __profile__+'data.json'
 
 plugin = XBMCSourcePlugin()
 
 def serverRequest(board = '', method = '', thread = False, extraData = []):
-	url = 'http://a.4cdn.org/'
+	url = 'https://a.4cdn.org/'
 	if(board != ''):
 		url += '%s/' % (board)
 	if(thread):
 		url += 'thread/'		
 	if(method != ''):
 		url += '%s.json' % (method)
-	req = urllib2.Request(url)
 	try:
-		conn = urllib2.urlopen(req)
+		conn = urllib.request.urlopen(url)
 		response = json.loads(conn.read())
 	except:
-		conn.close()
-		die('There was an error retrieving data from the server')
+		if(conn):
+			conn.close()
+		traceback.print_stack()
+		die('There was an error retrieving data from the server: %s' % (url))
 	else:
-		conn.close()
 		return response
 
 def populateHomeDirectory():
 	array = serverRequest('','boards')['boards']
-	listitem = xbmcgui.ListItem('> Bookmarks', iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
-	plugin.addDirectoryItem(url='%s/bmarks' % (plugin.root), listitem=listitem, isFolder=True)	
+	listitem = xbmcgui.ListItem('> Bookmarks')
+	listitem.setArt({ 'icon': 'DefaultFolder.png', 'thumbnail' : 'DefaultFolder.png' })
+	plugin.addDirectoryItem(url='plugin://%s/bmarks' % (plugin.root), listitem=listitem, isFolder=True)	
 	for obj in array:
 		if(obj['ws_board'] == 0 and plugin.getSetting('incl_nsfw') == 'false') :
 			pass
 		else :
 			commands = []
-			commands.append(( 'Jump to page', 'XBMC.Container.Update(%s/%s/jump)' % (plugin.root, obj['board']), ))
-			listitem = xbmcgui.ListItem('/'+obj['board']+'/ - '+obj['title'], iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
+			commands.append(( 'Jump to page', 'XBMC.Container.Update(plugin://%s/%s/jump)' % (plugin.root, obj['board']), ))
+			listitem = xbmcgui.ListItem('/'+obj['board']+'/ - '+obj['title'])
+			listitem.setArt({ 'icon': 'DefaultFolder.png', 'thumbnail' : 'DefaultFolder.png' })
 			listitem.addContextMenuItems(commands)
-			plugin.addDirectoryItem(url='%s/%s/1' % (plugin.root, obj['board']), listitem=listitem, isFolder=True)
+			plugin.addDirectoryItem(url='plugin://%s/%s/1' % (plugin.root, obj['board']), listitem=listitem, isFolder=True)
 	plugin.endOfDirectory()
 
 def populateBoardDirectory(board,page):
@@ -66,14 +69,16 @@ def populateBoardDirectory(board,page):
 				thumb = None
 				listitem = xbmcgui.ListItem(label)
 			else:
-				listitem = xbmcgui.ListItem(label,iconImage=thumb,thumbnailImage=thumb)
+				listitem = xbmcgui.ListItem(label)
+				listitem.setArt({ 'icon': thumb, 'thumbnail' : thumb })
 			commands.append(( 'Bookmark thread', 'XBMC.RunScript(%s, add, %s, %s, %s, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, board, obj['no'], thumb, __icon__), ))
 			listitem.addContextMenuItems(commands)
-			plugin.addDirectoryItem(url='%s/%s/thread/%s' % (plugin.root, board, obj['no']), listitem=listitem, isFolder=True)
+			plugin.addDirectoryItem(url='plugin://%s/%s/thread/%s' % (plugin.root, board, obj['no']), listitem=listitem, isFolder=True)
 		if(len(pages) != int(page)) :
 			nextPageNum = int(page) + 1
-			listitem = xbmcgui.ListItem('> Next Page (%s)' % (nextPageNum), iconImage="DefaultFolder.png", thumbnailImage="DefaultFolder.png")
-			plugin.addDirectoryItem(url='%s/%s/%s' % (plugin.root, board, nextPageNum), listitem=listitem, isFolder=True)		
+			listitem = xbmcgui.ListItem('> Next Page (%s)' % (nextPageNum))
+			listitem.setArt({ 'icon': "DefaultFolder.png", 'thumbnail' : "DefaultFolder.png" })
+			plugin.addDirectoryItem(url='plugin://%s/%s/%s' % (plugin.root, board, nextPageNum), listitem=listitem, isFolder=True)		
 		plugin.endOfDirectory()
 
 def populatePostDirectory(board,thread):
@@ -86,7 +91,8 @@ def populatePostDirectory(board,thread):
 		except:
 			pass
 		else:
-			listitem = xbmcgui.ListItem(filename,iconImage=thumb)
+			listitem = xbmcgui.ListItem(filename)
+			listitem.setArt({ 'icon': thumb })
 			plugin.addDirectoryItem(url=image, listitem=listitem)
 	plugin.endOfDirectory()
 
@@ -106,9 +112,10 @@ def populateBookmarkDirectory():
 		for bmark in bmarks:
 			commands = []
 			commands.append(( 'Remove bookmark', 'XBMC.RunScript(%s, remove, %s, %s, %s)' % (os.path.join(__cwd__, 'resources', 'lib', 'bmark_thread.py'), json_filename, bmark['number'],  __icon__), ))
-			listitem = xbmcgui.ListItem(bmark['name'],iconImage=bmark['thumb'])
+			listitem = xbmcgui.ListItem(bmark['name'])
+			listitem.setArt({ 'icon': bmark['thumb'] })
 			listitem.addContextMenuItems(commands)
-			plugin.addDirectoryItem(url='%s/%s/chkthread/%s' % (plugin.root, bmark['board'], bmark['number']), listitem=listitem, isFolder=True)
+			plugin.addDirectoryItem(url='plugin://%s/%s/chkthread/%s' % (plugin.root, bmark['board'], bmark['number']), listitem=listitem, isFolder=True)
 		plugin.endOfDirectory()
 
 def die(alert=False):
@@ -116,8 +123,12 @@ def die(alert=False):
 		xbmcgui.Dialog().ok(__addonname__, alert)
 	raise SystemExit(0)	
 
-if plugin.path:
+if plugin.path != 'plugin:///':
 	split = plugin.path.split('/')
+	# hacky way to remove plugin://
+	split.pop(0)
+	split.pop(0)
+	split.pop(0)
 	if(split[0] == 'bmarks') :
 		populateBookmarkDirectory()	
 	elif(split[1] == 'thread') :
