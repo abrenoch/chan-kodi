@@ -37,7 +37,7 @@ def populateHomeDirectory():
 	listitem.setArt({ 'icon': 'DefaultFolder.png', 'thumbnail' : 'DefaultFolder.png' })
 	plugin.addDirectoryItem(url='plugin://%s/bmarks' % (plugin.root), listitem=listitem, isFolder=True)	
 	for obj in array:
-		if(obj['ws_board'] == 0 and plugin.getSetting('incl_nsfw') == 'fish') :
+		if(obj['ws_board'] == 0 and plugin.getSetting('incl_nsfw') == 'false') :
 			pass
 		else :
 			commands = []
